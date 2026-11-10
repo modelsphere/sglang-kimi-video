@@ -66,6 +66,32 @@ def test_cuda_temporal_preprocess_positions_pool_and_projector(config_values, t)
     assert projector(merged).shape == (1, 16)
 
 
+def test_cuda_video_preprocessing_bounds_source_resolution_peak(config_values):
+    from sglang.srt.multimodal.processors.kimi_k25 import navit_resize_config
+
+    config = VideoConfig.from_mapping(config_values)
+    # All-at-once float conversion alone needs 384 MiB for these 128 frames.
+    # Bounded batches must preserve the output with a much smaller live peak.
+    frames = torch.full((128, 3, 512, 512), 127, dtype=torch.uint8)
+    items = [
+        VisualItem("video", 0, tuple(chunk.unbind()), 512, 512, 16)
+        for chunk in frames.split(4)
+    ]
+    configs = [resize_config(item, config, navit_resize_config) for item in items]
+    torch.cuda.synchronize()
+    baseline = torch.cuda.memory_allocated()
+    torch.cuda.reset_peak_memory_stats()
+    features, grids = preprocess_visual_items(items, config, configs, device="cuda")
+    torch.cuda.synchronize()
+    assert grids == [(4, 4, 4)] * 32
+    assert len(features) == 32
+    for feature in features:
+        torch.testing.assert_close(feature, torch.full_like(feature, 127 / 127.5 - 1))
+    peak = torch.cuda.max_memory_allocated() - baseline
+    print(f"preprocess_peak_allocated={peak} bytes ({peak / 1024**2:.3f} MiB)")
+    assert peak < 128 * 1024 * 1024
+
+
 if __name__ == "__main__":
     import sys
 

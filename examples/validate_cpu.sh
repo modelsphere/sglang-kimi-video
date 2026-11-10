@@ -9,7 +9,7 @@ K31_BUILD_DIR=$(mktemp -d /tmp/k31-video-cpu.XXXXXX)
 cp -R "$K31_SOURCE_DIR/." "$K31_BUILD_DIR/"
 cd "$K31_BUILD_DIR"
 python3 -m build --no-isolation --wheel --sdist --outdir "$K31_RESULT_DIR" 2>&1 | tee "$K31_RESULT_DIR/build.log"
-python3 -m pip install --no-deps --force-reinstall "$K31_RESULT_DIR/sglang_kimi_k3_video-0.0.1-py3-none-any.whl"
+python3 -m pip install --no-deps --force-reinstall "$K31_RESULT_DIR/sglang_kimi_k3_video-0.0.2-py3-none-any.whl"
 # Read CPU integration source bodies from the installed image, not an overlaid
 # checkout. Runtime tests run new interpreters and import the installed wheel.
 KIMI_K3_VIDEO_TEST_SRT=$(python3 -c 'from importlib.util import find_spec; from pathlib import Path; print(Path(find_spec("sglang").origin).parent / "srt")')

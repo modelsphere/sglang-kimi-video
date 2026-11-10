@@ -247,5 +247,11 @@ async def process_mm_data(
             lambda done: done.exception() if not done.cancelled() else None
         )
         raise
+    except BaseException:
+        # The Future owns the exception, whose traceback retains this frame.
+        # Drop the reverse reference so failed GPU preprocessing tensors do not
+        # stay alive until cyclic GC runs, even when requests are serialized.
+        work = None
+        raise
     output.mm_items = self._prepare_mm_items_for_transport(output.mm_items)
     return output

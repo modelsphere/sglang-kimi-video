@@ -1,6 +1,6 @@
 # sglang-kimi-video
 
-[![version](https://img.shields.io/badge/version-0.0.1-blue)](pyproject.toml)
+[![version](https://img.shields.io/badge/version-0.0.2-blue)](pyproject.toml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 
 Video input for **Kimi-K3.1-Pro** on SGLang: Base64 videos, multiple videos,
@@ -19,7 +19,7 @@ Torch/CUDA, torchcodec or decord, and FFmpeg.
    python3 -m pip install build
    python3 -m build --wheel
    docker build -f examples/Dockerfile \
-     -t kimi-k31-video:dev-kimi-k31-pro-plugin-0.0.1 .
+     -t kimi-k31-video:dev-kimi-k31-pro-plugin-0.0.2 .
    ```
 
 2. **Launch** with local target and draft model directories:
@@ -54,6 +54,12 @@ Frames are sampled uniformly using Python's ties-to-even `round(source_frames ×
 clamped to 1–source frame count before applying frame limits. Low-FPS sources are not padded with duplicate frames;
 shorter final chunks are preserved. Patch budgets must fit the spatial merge grid.
 
+GPU preprocessing batches at most 16 frames and 16 megapixels of source pixels
+per call (a single larger frame is processed alone). This bounds intermediate
+frame batches before resizing without changing sampling or temporal chunks.
+Failed preprocessing releases its Future reference so intermediate tensors do
+not wait for cyclic garbage collection.
+
 ## Deployment
 
 Set these environment variables **before running the launch script**:
@@ -62,7 +68,7 @@ Set these environment variables **before running the launch script**:
 | --- | --- | --- |
 | `K3_MODEL_PATH` | required; no default | host directory containing the target model |
 | `K3_DRAFT_PATH` | required; no default | host directory containing the draft model |
-| `K3_IMAGE` | `kimi-k31-video:dev-kimi-k31-pro-plugin-0.0.1` | plugin image to run |
+| `K3_IMAGE` | `kimi-k31-video:dev-kimi-k31-pro-plugin-0.0.2` | plugin image to run |
 | `K3_CONTAINER` | `kimi-k31-video-e2e` | container name |
 | `K3_PORT` | `31023` | server port; the launch example overrides it to `31031` |
 | `K3_RUN_DIR` | `$PWD/k31-run` | directory for caches and run files |
@@ -88,7 +94,7 @@ python3 -m build --wheel
 
 # Inside the SGLang container:
 python3 -m pip install --no-deps \
-  /tmp/sglang_kimi_k3_video-0.0.1-py3-none-any.whl
+  /tmp/sglang_kimi_k3_video-0.0.2-py3-none-any.whl
 
 export SGLANG_PLUGINS="${SGLANG_PLUGINS:+${SGLANG_PLUGINS},}kimi_k3_video"
 export SGLANG_HTTP_SERVER_APP_PATH=kimi_k3_video.http_app:app

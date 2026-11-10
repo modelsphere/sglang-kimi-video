@@ -53,7 +53,7 @@ hangWatcher:
   enabled: true
 image:
   repository: your-registry/sglang-kimi-k3-video
-  tag: dev-kimi-k31-pro-video-0.0.1
+  tag: dev-kimi-k31-pro-video-0.0.2
 lifecycle:
   forceShutdown: true
   preStop:

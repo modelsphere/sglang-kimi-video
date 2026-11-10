@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import functools
+import gc
 import io
 import threading
+import weakref
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from types import SimpleNamespace
@@ -71,6 +74,108 @@ def test_mixed_rgba_image_uses_original_alpha_order(preprocess_source, config_va
     )
     assert torch.equal(features[1], -torch.ones_like(features[1]))
     rgba.close()
+
+
+def test_preprocessing_preserves_frames_and_temporal_grids_across_batches(
+    preprocess_source, config_values
+):
+    config = VideoConfig.from_mapping(config_values)
+    lengths = [4, 4, 4, 4, 4, 3]
+    items, configs = [], []
+    offset = 0
+    for length in lengths:
+        frames = tuple(
+            torch.full((3, 28, 28), index * 10, dtype=torch.uint8)
+            for index in range(offset, offset + length)
+        )
+        item = VisualItem("video", 0, frames, 28, 28, 16)
+        items.append(item)
+        configs.append(
+            resize_config(item, config, preprocess_source.navit_resize_config)
+        )
+        offset += length
+    features, grids = preprocess_visual_items(items, config, configs, device="cpu")
+    assert grids == [(length, 2, 2) for length in lengths]
+    offset = 0
+    for feature, length in zip(features, lengths):
+        assert feature.shape == (length * 4, 3, 14, 14)
+        for index in range(length):
+            torch.testing.assert_close(
+                feature[index * 4 : (index + 1) * 4],
+                torch.full((4, 3, 14, 14), (offset + index) * 10 / 127.5 - 1),
+            )
+        offset += length
+
+
+@pytest.mark.parametrize("processor_executor", [False, True])
+def test_failed_preprocessing_releases_frame_locals_without_cyclic_gc(
+    config_values, io_source, monkeypatch, processor_executor
+):
+    from kimi_k3_video import SOURCE_INDEX_KEY, processor
+
+    class Allocation:
+        pass
+
+    class ProcessorExecutor:
+        async def run(self, function, *args):
+            return await asyncio.get_running_loop().run_in_executor(
+                pool, functools.partial(function, *args)
+            )
+
+    allocations = []
+
+    def fail_preprocessing(*args):
+        allocation = Allocation()
+        allocations.append(weakref.ref(allocation))
+        raise RuntimeError("preprocessing failed")
+
+    monkeypatch.setattr(processor, "load_sources", lambda *args: [])
+    monkeypatch.setattr(processor, "prepare_output", fail_preprocessing)
+    owner = SimpleNamespace(
+        _processor=SimpleNamespace(
+            media_processor=SimpleNamespace(media_proc_cfg=config_values)
+        ),
+        hf_config=SimpleNamespace(
+            model_type="kimi_k31",
+            vision_config=SimpleNamespace(
+                patch_size=14, merge_kernel_size=(2, 2), init_pos_emb_time=4
+            ),
+        ),
+        mm_processor_executor=ProcessorExecutor() if processor_executor else None,
+        reject_caller_image_identity=lambda *args: None,
+    )
+    _, utils = io_source
+    request = SimpleNamespace(
+        video_data=[
+            utils.VideoData("data:video/mp4;base64,dmlkZW8=", {SOURCE_INDEX_KEY: 0})
+        ]
+    )
+
+    async def fail_request():
+        try:
+            await processor.process_mm_data(None, owner, [], [99], request)
+        except RuntimeError as error:
+            assert str(error) == "preprocessing failed"
+        else:
+            pytest.fail("The original preprocessing error must propagate")
+
+    async def run():
+        for _ in range(3):
+            await fail_request()
+            # Let Future callbacks finish without collecting reference cycles.
+            await asyncio.sleep(0)
+            assert allocations and all(ref() is None for ref in allocations)
+
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            owner.io_executor = pool
+            asyncio.run(run())
+    finally:
+        if was_enabled:
+            gc.enable()
+        gc.collect()
 
 
 def test_prepare_composes_real_items_and_preserves_identity(

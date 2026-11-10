@@ -5,7 +5,7 @@ set -euo pipefail
 : "${K3_MODEL_PATH:?Set the host path to Kimi-K3.1-Pro}"
 : "${K3_DRAFT_PATH:?Set the host path to Kimi-K3.1-Dflash2-Preview}"
 K3_RUN_DIR="${K3_RUN_DIR:-$PWD/k31-run}"
-K3_IMAGE="${K3_IMAGE:-kimi-k31-video:dev-kimi-k31-pro-plugin-0.0.1}"
+K3_IMAGE="${K3_IMAGE:-kimi-k31-video:dev-kimi-k31-pro-plugin-0.0.2}"
 K3_CONTAINER="${K3_CONTAINER:-kimi-k31-video-e2e}"
 K3_PORT="${K3_PORT:-31023}"
 test -f "$K3_MODEL_PATH/config.json"

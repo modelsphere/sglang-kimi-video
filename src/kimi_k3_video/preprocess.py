@@ -6,6 +6,28 @@ from contextlib import nullcontext
 
 from .config import VideoConfig
 
+_PREPROCESS_BATCH_FRAMES = 16
+_PREPROCESS_BATCH_PIXELS = 16 * 1024 * 1024
+
+
+def _frame_batches(items, configs):
+    """Bound original-resolution GPU intermediates before resize/patchify."""
+    frames, frame_configs, pixels = [], [], 0
+    for item, resize in zip(items, configs):
+        frame_pixels = item.width * item.height
+        for frame in item.frames:
+            if frames and (
+                len(frames) >= _PREPROCESS_BATCH_FRAMES
+                or pixels + frame_pixels > _PREPROCESS_BATCH_PIXELS
+            ):
+                yield frames, frame_configs
+                frames, frame_configs, pixels = [], [], 0
+            frames.append(frame)
+            frame_configs.append(resize)
+            pixels += frame_pixels
+    if frames:
+        yield frames, frame_configs
+
 
 def resize_config(item, config: VideoConfig, resize_fn):
     result = resize_fn(
@@ -96,23 +118,25 @@ def _preprocess_visual_items(items, config, configs, *, device):
 
     if not items or len(items) != len(configs):
         raise ValueError("Kimi-K3 requires matching visual items and resize configs")
-    frames, frame_configs = [], []
-    for item, resize in zip(items, configs):
-        frames.extend(item.frames)
-        frame_configs.extend([resize] * len(item.frames))
     scale, bias = normalization_tensors(config.image_mean, config.image_std, device)
     # No new kernel: use the checkpoint-compatible resize/alpha/norm/patchify.
-    patches, frame_grids = _gpu_preprocess_images(
-        frames,
-        frame_configs,
-        scale,
-        bias,
-        config.patch_size,
-        to_chw=lambda frame: to_chw_uint8(frame, device=device),
-        post_resize=lambda values: fill_transparent_bg(
-            values, config.transparent_bg_config
-        ),
-    )
+    patch_batches, grid_batches = [], []
+    for frames, frame_configs in _frame_batches(items, configs):
+        batch_patches, batch_grids = _gpu_preprocess_images(
+            frames,
+            frame_configs,
+            scale,
+            bias,
+            config.patch_size,
+            to_chw=lambda frame: to_chw_uint8(frame, device=device),
+            post_resize=lambda values: fill_transparent_bg(
+                values, config.transparent_bg_config
+            ),
+        )
+        patch_batches.append(batch_patches)
+        grid_batches.append(batch_grids)
+    patches = patch_batches[0] if len(patch_batches) == 1 else torch.cat(patch_batches)
+    frame_grids = grid_batches[0] if len(grid_batches) == 1 else torch.cat(grid_batches)
     grids, cursor = [], 0
     for item in items:
         count = len(item.frames)

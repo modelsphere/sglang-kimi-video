@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sglang-kimi-k3-video"
-version = "0.0.1"
+version = "0.0.2"
 description = "Base64 video input hooks for Kimi-K3.1-Pro on SGLang dev-kimi-k31-pro"
 requires-python = ">=3.11"
 # SGLang is supplied by the pinned deployment image. Its nightly distribution
