@@ -1,0 +1,110 @@
+env:
+  # Optional video overrides: uncomment as needed; otherwise use model defaults.
+  # - name: KIMI_K3_VIDEO_SAMPLE_FPS
+  #   value: "4"
+  # - name: KIMI_K3_VIDEO_MAX_FRAMES
+  #   value: "16"
+  # - name: KIMI_K3_VIDEO_TEMPORAL_MERGE_KERNEL_SIZE
+  #   value: "4"
+  # - name: KIMI_K3_VIDEO_IN_PATCH_LIMIT_EACH_FRAME
+  #   value: "16384"
+  # - name: KIMI_K3_VIDEO_IN_PATCH_LIMIT_VIDEO
+  #   value: "655360" # Use "none" to disable the shared budget.
+  # - name: KIMI_K3_VIDEO_PATCH_LIMIT_ON_ONE_SIDE
+  #   value: "512"
+  # - name: KIMI_K3_VIDEO_TIMESTAMP_MODE
+  #   value: "hh:mm:ss.fff"
+  # Merge any existing SGLANG_PLUGINS whitelist members here.
+  - name: SGLANG_PLUGINS
+    value: kimi_k3_video
+  - name: SGLANG_HTTP_SERVER_APP_PATH
+    value: kimi_k3_video.http_app:app
+  - name: NVIDIA_DISABLE_REQUIRE
+    value: "1"
+  - name: PYTORCH_ALLOC_CONF
+    value: expandable_segments:True
+  - name: SGLANG_DCP_PUSH_COMBINE_MAX_ROWS
+    value: "1536"
+  - name: SGLANG_CUSTOM_ALL_REDUCE_V2_MAX_SIZE_KB
+    value: "32768"
+# Reference parameters only; SGLang owns validation and defaults.
+extraArgs:
+  - --trust-remote-code
+  - --tp-size=8
+  - --dcp-size=8
+  - --dcp-comm-backend=fi_a2a
+  - --ep-size=2
+  - --mem-fraction-static=0.85
+  - --max-running-requests=50
+  - --max-mamba-cache-size=270
+  - --weight-loader-prefetch-checkpoints
+  - '--model-loader-extra-config={"enable_multithread_load": true}'
+  - --mamba-radix-cache-strategy=extra_buffer
+  - --reasoning-parser=kimi_k3
+  - --tool-call-parser=kimi_k3
+  - --speculative-algorithm=DFLASH
+  - --speculative-draft-model-path=/draft-model
+  - --speculative-dflash-block-size=5
+  - --speculative-draft-kv-cache-dtype=fp8_e4m3
+  - --speculative-draft-attention-backend=cutedsl_mla
+  - --enable-linear-replayssm-spec
+  - --tokenizer-worker-num=4
+hangWatcher:
+  enabled: true
+image:
+  repository: your-registry/sglang-kimi-k3-video
+  tag: dev-kimi-k31-pro-video-0.0.1
+lifecycle:
+  forceShutdown: true
+  preStop:
+    drainSeconds: 600
+    pollIntervalSeconds: 5
+  preStopKill: true
+model:
+  localPath: /mnt/disk0/models/Kimi-K3.1-Pro
+  contextLength: ""
+  gpus: "8"
+  hostPathType: Directory
+  mountPath: /model
+  name: kimi-k3.1-pro
+modelCheck:
+  enabled: true
+  requiredGlobs:
+    - config.json
+    - "*.safetensors"
+progressDeadlineSeconds: 7200
+resources:
+  limits:
+    ephemeral-storage: 16Gi
+  requests:
+    cpu: "64"
+    memory: "1024Gi"
+    ephemeral-storage: 16Gi
+startupProbe:
+  failureThreshold: 180
+  httpGet:
+    path: /health
+    port: http
+  periodSeconds: 30
+  timeoutSeconds: 10
+terminationGracePeriodSeconds: 3600
+volumeMounts:
+  - mountPath: /draft-model
+    name: draft-model
+    readOnly: true
+  - mountPath: /root/.cache
+    name: dot-cache
+  - mountPath: /dev/shm
+    name: dshm
+volumes:
+  - hostPath:
+      path: /mnt/disk0/models/Kimi-K3.1-Dflash2-Preview
+      type: Directory
+    name: draft-model
+  - emptyDir:
+      sizeLimit: 10Gi
+    name: dot-cache
+  - emptyDir:
+      medium: Memory
+      sizeLimit: 32Gi
+    name: dshm

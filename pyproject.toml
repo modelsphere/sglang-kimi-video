@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sglang-kimi-k3-video"
+version = "0.0.1"
+description = "Base64 video input hooks for Kimi-K3.1-Pro on SGLang dev-kimi-k31-pro"
+requires-python = ">=3.11"
+# SGLang is supplied by the pinned deployment image. Its nightly distribution
+# version is not a reliable source revision; compat.py checks the source APIs.
+dependencies = ["sglang"]
+readme = "README.md"
+
+[project.optional-dependencies]
+test = ["pytest>=8", "build", "ruff"]
+
+[project.entry-points."sglang.srt.plugins"]
+kimi_k3_video = "kimi_k3_video.plugin:register"
+
+[project.scripts]
+kimi-k3-video-doctor = "kimi_k3_video.doctor:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+kimi_k3_video = ["runtime_sources.json"]
+
+[tool.setuptools.data-files]
+"share/doc/sglang-kimi-k3-video" = ["README.md"]
+"share/doc/sglang-kimi-k3-video/examples" = ["examples/chat_video.py", "examples/verify_service.py", "examples/verify_video_semantics.py", "examples/create_video_fixtures.py", "examples/run_integration.sh", "examples/deployment.values.yaml", "examples/Dockerfile", "examples/validate_cpu.sh"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["cuda: requires a CUDA SGLang installation", "runtime: requires a full SGLang installation"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

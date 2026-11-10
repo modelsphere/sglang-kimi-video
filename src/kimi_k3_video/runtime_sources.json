@@ -1,0 +1,21 @@
+{
+  "kernels/ops/mm/process/image.py": "79870c590b700056cafff51814d892bc090a0d3dc73fffaea5ecfae266a1ae33",
+  "srt/configs/kimi_k3.py": "f256b20314d91338f1d48028f03b5b487a7920acb34beffaecfe36a9f8587ef2",
+  "srt/entrypoints/openai/serving_chat.py": "8f9d688e7112fd24d807121f1a8178d378199b3e599ed82919b025c275bb34a7",
+  "srt/managers/io_struct.py": "0518aa62b3d864be6f4d76a7fcf14720a2f5854b557df19ddd8ea717de62cb57",
+  "srt/managers/schedule_batch.py": "cdd055c2bde204c40f187a91b34eea2144c9982274171fc928bd94890c0fdf51",
+  "srt/models/kimi_k3_vl.py": "b1b0d20dfcada8fb050959733b4eb70ee7cf82bbb4980fb4c4ac52be2aa99241",
+  "srt/multimodal/kimi_k3_image_processing.py": "5a87501834fd8b5189a11d8d2a6497de2a12baa47bba7775e5c3dd8bc3e2f9ca",
+  "srt/multimodal/mm_utils.py": "d2d58ad6446331d495bcaa3312c22fdd9143762e9455ccacdf529748521ba05b",
+  "srt/multimodal/modality.py": "ceb02beecda4bf6a631606e2abf7671bd352e134545dfd17485dc8c0521cf02d",
+  "srt/multimodal/processors/base_processor.py": "33b855d19b07bf3ef6fee0fda21a9ead741c55d96c3ba245e0d62ae8ca0f14f2",
+  "srt/multimodal/processors/kimi_common.py": "595998f11669179388df113a2ce853451cc2d99b2d7d2addc89448231ed48b63",
+  "srt/multimodal/processors/kimi_k25.py": "027bf2bb2400987aa7778cdd0b8be749841cebe17266a53fb7db582caf0190dc",
+  "srt/multimodal/processors/kimi_k3.py": "8f50c6311200759ddf3112f697964c4c64263c017deba061bd0c757757295a21",
+  "srt/parser/jinja_template_utils.py": "bf200fe54f10160a392437d9a92a83b4c14444b7b10de952479c474f9b0731f2",
+  "srt/plugins/__init__.py": "3a975a73f1a7887e68c81ea7a2530250597ac8ae978efc0b0f70f038a99a3164",
+  "srt/plugins/hook_registry.py": "0144d8c3e5ee294322894f88b8ad3bd49edad15c124650e4e834d0366815dc7d",
+  "srt/utils/__init__.py": "d4c887ce6d68fb14d2f870c50dabc621da1c67a85823e8c8cf704392865963c8",
+  "srt/utils/common.py": "246705597a73fb3fc3ee7e0f627f110195a270bff1088764fc78580392bb6184",
+  "srt/utils/video_decoder.py": "6762a7088adbb23b6d299e632c96f8a0dba7a090c6de968cd244f86de5b1f005"
+}

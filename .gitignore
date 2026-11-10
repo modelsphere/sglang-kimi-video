@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.idea/
+.DS_Store
+build/
+dist/
+k31-run/
+results/
+
+# Test reports and coverage output
+/service-validation.json
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+junit.xml
