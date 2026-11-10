@@ -81,6 +81,24 @@ its default is `lmsysorg/sglang:dev-kimi-k31-pro`. The image must satisfy the SG
 `SGLANG_HTTP_SERVER_APP_PATH=kimi_k3_video.http_app:app` for multiple tokenizer workers.
 Run `kimi-k3-video-doctor --check-hooks --model-path /path/to/model` before restarting.
 
+Build from the repository root, then copy the wheel into the SGLang container:
+
+```sh
+python3 -m build --wheel
+
+# Inside the SGLang container:
+python3 -m pip install --no-deps \
+  /tmp/sglang_kimi_k3_video-0.0.1-py3-none-any.whl
+
+export SGLANG_PLUGINS="${SGLANG_PLUGINS:+${SGLANG_PLUGINS},}kimi_k3_video"
+export SGLANG_HTTP_SERVER_APP_PATH=kimi_k3_video.http_app:app
+
+# Replace /model with the model path inside the container.
+kimi-k3-video-doctor --check-hooks --model-path /model
+
+# Restart SGLang with its original command in this shell.
+```
+
 ### Deployment example
 
 After building the image in Get started, replace the model paths and launch:
