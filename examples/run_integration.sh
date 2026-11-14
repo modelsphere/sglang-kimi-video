@@ -59,5 +59,5 @@ docker run --init --detach \
     shift
     exec python3 -m sglang.launch_server \
       --model-path /model --served-model-name kimi-k3.1-pro \
-      --host 127.0.0.1 --port "$port" "$@"
+      --host 0.0.0.0 --port "$port" "$@"
   ' integration "$K3_PORT" "$@"

@@ -73,7 +73,7 @@ Set these environment variables **before running the launch script**:
 | `K3_PORT` | `31023` | server port; the launch example overrides it to `31031` |
 | `K3_RUN_DIR` | `$PWD/k31-run` | directory for caches and run files |
 
-Match the client `--base-url` to the server address and port. The server listens on `127.0.0.1` by default.
+Match the client `--base-url` to the server address and port. The server listens on `0.0.0.0` by default; restrict network access or configure authentication before exposing the port.
 
 SGLang server flags are configurable in the [launch script](examples/run_integration.sh)'s
 `set --` block, or by passing a complete replacement argument list to the script.

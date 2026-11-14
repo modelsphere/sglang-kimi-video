@@ -199,7 +199,7 @@ class VideoConfig:
     def per_frame_budget(self, count: int) -> int:
         budget = self.frame_patch_limit
         if self.video_patch_limit is not None:
-            budget = min(budget, self.video_patch_limit // count)
+            budget = min(budget, max(1, round(self.video_patch_limit / count)))
         if budget < self.merge_size**2:
             raise ValueError(
                 "Video patch budget cannot fit the minimum spatial merge grid"
